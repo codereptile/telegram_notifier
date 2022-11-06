@@ -14,7 +14,7 @@ def client(ip, port, message):
 
 
 CLIENTS_PER_SPAMMER = 3
-SPAMMER_THREADS = 200
+SPAMMER_THREADS = 2000
 
 
 def client_spammer(spammer_id):
