@@ -1,23 +1,30 @@
 import re
 import signal
+import socket
 import threading
 import subprocess
 import time
+import message_handler
 
-new_messages = []
-stop_all_threads = False
+
+def send_data(message):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.connect(("localhost", 10002))
+        sock.sendall(bytes(message, 'ascii'))
+        response = str(sock.recv(1024), 'ascii')
+        assert response == "Accepted"
+
+
+message_handler = message_handler.MessageHandler(send_data)
 
 DEFAULT_DISK_USAGE_PERCENT_TRIGGER = 1
 disk_usage_percent_trigger = DEFAULT_DISK_USAGE_PERCENT_TRIGGER
-
-messages_mutex = threading.Lock()
 
 FILE_SYSTEM_NAME = "/dev/nvme0n1p2.*"
 
 
 def check_server_status():
     global disk_usage_percent_trigger
-    global new_messages
 
     output_message = ""
     output_string = subprocess.run(["df", "-h"], capture_output=True).stdout.decode("utf-8")
@@ -35,21 +42,7 @@ def check_server_status():
         disk_usage_percent_trigger = DEFAULT_DISK_USAGE_PERCENT_TRIGGER
 
     if output_message:
-        messages_mutex.acquire()
-        new_messages.append(output_message)
-        messages_mutex.release()
-
-
-def send_updates():
-    global new_messages
-
-    messages_mutex.acquire()
-    if len(new_messages) != 0:
-        for message in new_messages:
-            print(message)
-
-    new_messages = []
-    messages_mutex.release()
+        message_handler.add_message(output_message)
 
 
 class Task(threading.Thread):
@@ -60,6 +53,9 @@ class Task(threading.Thread):
                 time.sleep(sleep)
 
         super().__init__(target=periodic_caller)
+
+
+stop_all_threads = False
 
 
 def graceful_stop(*args):
@@ -74,7 +70,7 @@ if __name__ == '__main__':
 
     tasks = [
         Task(check_server_status, 1),
-        Task(send_updates, 1)
+        Task(message_handler.flush_messages, 1)
     ]
     for task in tasks:
         task.start()
