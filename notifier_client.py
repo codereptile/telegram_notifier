@@ -20,7 +20,7 @@ if __name__ == '__main__':
     message_handler.send_immediately("Client 'test' online")
 
     task_pool = background_task.BackgroundTaskPool(message_handler)
-    task_pool.add_task(server_checks.check_disk_usage, 1)
+    task_pool.add_task(server_checks.check_disk_usage, 5, filesystem="/dev/nvme0n1p2.*")
     task_pool.start_tasks()
 
     signal.signal(signal.SIGINT, task_pool.graceful_stop)
