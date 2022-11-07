@@ -26,7 +26,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, task_pool.graceful_stop)
     signal.signal(signal.SIGTERM, task_pool.graceful_stop)
 
-    while not task_pool.get_stop_all_threads():
+    while task_pool.is_working:
         message_handler.flush_messages()
         time.sleep(0.1)
 

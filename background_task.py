@@ -1,22 +1,26 @@
 import threading
 import time
 
-stop_all_threads = False
-
 
 class BackgroundTask(threading.Thread):
     def __init__(self, target, sleep, message_handler):
+        self.stop_thread = False
+
         def periodic_caller():
-            while not stop_all_threads:
+            while not self.stop_thread:
                 target(message_handler)
                 time.sleep(sleep)
 
         super().__init__(target=periodic_caller)
 
+    def stop(self):
+        self.stop_thread = True
+
 
 class BackgroundTaskPool:
     def __init__(self, message_handler):
         self.message_handler = message_handler
+        self.is_working = True
         self.task_pool = []
 
     def add_task(self, target, sleep):
@@ -26,15 +30,10 @@ class BackgroundTaskPool:
         for task in self.task_pool:
             task.start()
 
-    @staticmethod
-    def graceful_stop(*args):
-        global stop_all_threads
-        stop_all_threads = True
-
-    @staticmethod
-    def get_stop_all_threads():
-        global stop_all_threads
-        return stop_all_threads
+    def graceful_stop(self, *args):
+        for task in self.task_pool:
+            task.stop()
+        self.is_working = False
 
     def await_all_tasks(self):
         for task in self.task_pool:
