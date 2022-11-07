@@ -16,10 +16,10 @@ SEND_UPDATES_INTERVAL = 1
 
 messages_mutex = threading.Lock()
 
-FILE_SYSTEM_NAME = "/dev/nvme0n1p2.*"
+FILE_SYSTEM_NAME = "/dev/nvme0n1p5.*"
 
 
-async def check_server_status():
+def check_server_status():
     global disk_usage_percent_trigger
     global new_messages
     while True:
@@ -56,7 +56,6 @@ def send_updates():
 
         new_messages = []
         messages_mutex.release()
-        print(2)
         time.sleep(SEND_UPDATES_INTERVAL)
 
 
