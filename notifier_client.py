@@ -17,7 +17,7 @@ def send_data(message):
 message_handler = message_handler.MessageHandler(send_data)
 
 if __name__ == '__main__':
-    print("Client starts")
+    message_handler.send_immediately("Client 'test' online")
 
     task_pool = background_task.BackgroundTaskPool(message_handler)
     task_pool.add_task(server_checks.check_disk_usage, 1)
@@ -30,6 +30,5 @@ if __name__ == '__main__':
         message_handler.flush_messages()
         time.sleep(0.1)
 
-    print("Client stop initialized")
     task_pool.await_all_tasks()
-    print("Client stop finished")
+    message_handler.send_immediately("Client 'test' offline")
