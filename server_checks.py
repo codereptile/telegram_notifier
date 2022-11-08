@@ -2,9 +2,10 @@ import re
 import subprocess
 
 
-def check_disk_usage(message_handler, **kwargs):
+def check_disk_usage(message_handler, data_from_config):
+    filesystem = data_from_config["arguments"]["filesystem"]
     output_string = subprocess.run(["df", "-h"], capture_output=True).stdout.decode("utf-8")
-    match = re.search(kwargs.get("filesystem"), output_string)
+    match = re.search(filesystem, output_string)
     if match is None:
         return "SERVER STATUS CHECK FAILED! (df -h)"
     match = re.search("[0-9]*%", match[0])

@@ -4,9 +4,11 @@
   "instruments": {
     "check_disk_usage": {
       "name": "check_disk_usage",
+      "enable": 1,
       "frequency": 5,
-      "filesystem": "/dev/nvme0n1p2.*",
-      "enable": 1
+      "arguments": {
+        "filesystem": "/dev/nvme0n1p2.*"
+      }
     }
   }
 }

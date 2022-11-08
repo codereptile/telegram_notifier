@@ -23,9 +23,9 @@ def get_instrument(data, instrument_name):
     return instruments[instrument_name]
 
 
-def get_instrument_condition(data, instrument_name):
+def get_instrument_enable(data, instrument_name):
     instrument = get_instrument(data, instrument_name)
-    return instrument["condition"]
+    return instrument["enable"]
 
 
 def get_instrument_frequency(data, instrument_name):

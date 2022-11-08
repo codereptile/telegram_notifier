@@ -1,15 +1,17 @@
 import threading
 import time
+import config_utils
 
 
 class BackgroundTask(threading.Thread):
-    def __init__(self, target, sleep, message_handler, **kwargs):
+    def __init__(self, target, message_handler, task_data):
         self.stop_thread = False
+        self.sleep = task_data["frequency"]
 
         def periodic_caller():
             while not self.stop_thread:
-                target(message_handler, **kwargs)
-                time.sleep(sleep)
+                target(message_handler, task_data)
+                time.sleep(self.sleep)
 
         super().__init__(target=periodic_caller)
 
@@ -23,8 +25,8 @@ class BackgroundTaskPool:
         self.is_working = True
         self.task_pool = []
 
-    def add_task(self, target, sleep, **kwargs):
-        self.task_pool.append(BackgroundTask(target, sleep, self.message_handler, **kwargs))
+    def add_task(self, target, task_data):
+        self.task_pool.append(BackgroundTask(target, self.message_handler, task_data))
 
     def start_tasks(self):
         for task in self.task_pool:

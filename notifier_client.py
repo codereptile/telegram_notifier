@@ -27,10 +27,8 @@ if __name__ == '__main__':
 
     task_pool = background_task.BackgroundTaskPool(message_handler)
     # add other tasks
-    if config_utils.get_instrument_condition(CONFIG_DATA, "check_disk_usage"):
-        filesystem = config_utils.get_instrument(CONFIG_DATA, "check_disk_usage")["filesystem"]
-        sleep = config_utils.get_instrument_frequency(CONFIG_DATA, "check_disk_usage")
-        task_pool.add_task(server_checks.check_disk_usage, sleep, filesystem=filesystem)
+    if config_utils.get_instrument_enable(CONFIG_DATA, "check_disk_usage"):
+        task_pool.add_task(server_checks.check_disk_usage, config_utils.get_instrument(CONFIG_DATA, "check_disk_usage"))
     # start tasks
     task_pool.start_tasks()
 
