@@ -1,0 +1,12 @@
+{
+  "host": "localhost",
+  "port": 1235,
+  "instruments": {
+    "check_disk_usage": {
+      "name": "check_disk_usage",
+      "frequency": 5,
+      "filesystem": "/dev/nvme0n1p2.*",
+      "enable": 1
+    }
+  }
+}

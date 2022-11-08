@@ -1,7 +1,11 @@
 import socket
 import threading
+import config_utils
 
-HOST, PORT = "localhost", 1235
+
+CONFIG_NAME = "config.json"
+CONFIG_DATA = config_utils.get_data_from_config(CONFIG_NAME)
+HOST, PORT = config_utils.get_host_from_config(CONFIG_DATA), config_utils.get_port_from_config(CONFIG_DATA)
 
 
 def client(ip, port, message):

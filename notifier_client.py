@@ -4,6 +4,12 @@ import time
 import message_handler
 import server_checks
 import background_task
+import config_utils
+
+
+CONFIG_NAME = "config.json"
+CONFIG_DATA = config_utils.get_data_from_config(CONFIG_NAME)
+
 
 
 def send_data(message):
@@ -20,7 +26,12 @@ if __name__ == '__main__':
     message_handler.send_immediately("Client 'test' online")
 
     task_pool = background_task.BackgroundTaskPool(message_handler)
-    task_pool.add_task(server_checks.check_disk_usage, 5, filesystem="/dev/nvme0n1p2.*")
+    # add other tasks
+    if config_utils.get_instrument_condition(CONFIG_DATA, "check_disk_usage"):
+        filesystem = config_utils.get_instrument(CONFIG_DATA, "check_disk_usage")["filesystem"]
+        sleep = config_utils.get_instrument_frequency(CONFIG_DATA, "check_disk_usage")
+        task_pool.add_task(server_checks.check_disk_usage, sleep, filesystem=filesystem)
+    # start tasks
     task_pool.start_tasks()
 
     signal.signal(signal.SIGINT, task_pool.graceful_stop)
