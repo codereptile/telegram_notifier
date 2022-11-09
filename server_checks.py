@@ -2,8 +2,8 @@ import re
 import subprocess
 
 
-def check_disk_usage(message_handler, data_from_config):
-    filesystem = data_from_config["arguments"]["filesystem"]
+def check_disk_usage(message_handler, config_arguments):
+    filesystem = config_arguments["filesystem"]
     output_string = subprocess.run(["df", "-h"], capture_output=True).stdout.decode("utf-8")
     match = re.search(filesystem, output_string)
     if match is None:

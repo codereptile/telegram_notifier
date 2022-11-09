@@ -8,7 +8,6 @@ import config_utils
 
 
 CONFIG_NAME = "config.json"
-CONFIG_DATA = config_utils.get_data_from_config(CONFIG_NAME)
 
 
 
@@ -24,11 +23,13 @@ message_handler = message_handler.MessageHandler(send_data)
 
 if __name__ == '__main__':
     message_handler.send_immediately("Client 'test' online")
+    config_data = config_utils.get_data_from_config(CONFIG_NAME)
 
     task_pool = background_task.BackgroundTaskPool(message_handler)
     # add other tasks
-    if config_utils.get_instrument_enable(CONFIG_DATA, "check_disk_usage"):
-        task_pool.add_task(server_checks.check_disk_usage, config_utils.get_instrument(CONFIG_DATA, "check_disk_usage"))
+    if config_utils.get_instrument_enable(config_data, "check_disk_usage"):
+        arguments = config_utils.get_instrument(config_data, "check_disk_usage")["arguments"]
+        task_pool.add_task(server_checks.check_disk_usage, arguments)
     # start tasks
     task_pool.start_tasks()
 

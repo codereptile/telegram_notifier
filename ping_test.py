@@ -4,8 +4,7 @@ import config_utils
 
 
 CONFIG_NAME = "config.json"
-CONFIG_DATA = config_utils.get_data_from_config(CONFIG_NAME)
-HOST, PORT = config_utils.get_host_from_config(CONFIG_DATA), config_utils.get_port_from_config(CONFIG_DATA)
+HOST, PORT = config_utils.get_host_from_config(config_utils.get_data_from_config(CONFIG_NAME)), config_utils.get_port_from_config(config_utils.get_data_from_config(CONFIG_NAME))
 
 
 def client(ip, port, message):

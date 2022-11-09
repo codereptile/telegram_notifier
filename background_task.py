@@ -1,6 +1,5 @@
 import threading
 import time
-import config_utils
 
 
 class BackgroundTask(threading.Thread):
