@@ -3,13 +3,13 @@ import time
 
 
 class BackgroundTaskSimple(threading.Thread):
-    def __init__(self, target, period):
+    def __init__(self, target, period, **kwargs):
         self.stop_thread = False
         self.sleep = period
 
         def periodic_caller():
             while not self.stop_thread:
-                target()
+                target(**kwargs)
                 time.sleep(self.sleep)
 
         super().__init__(target=periodic_caller)
@@ -43,8 +43,8 @@ class BackgroundTaskPool:
     def add_task(self, target, task_data):
         self.task_pool.append(BackgroundTask(target, self.message_handler, task_data))
 
-    def add_task_simple(self, target, period):
-        self.task_pool.append(BackgroundTaskSimple(target, period))
+    def add_task_simple(self, target, period, **kwargs):
+        self.task_pool.append(BackgroundTaskSimple(target, period, **kwargs))
 
     def start_tasks(self):
         for task in self.task_pool:

@@ -103,6 +103,7 @@ if __name__ == "__main__":
     task_pool = background_task.BackgroundTaskPool(message_handler)
     # add mandatory tasks
     task_pool.add_task_simple(message_handler.flush_messages, 0.1)
+    task_pool.add_task_simple(client_handler.check_clients, 0.1, message_handler=message_handler)
     # start tasks
     task_pool.start_tasks()
 

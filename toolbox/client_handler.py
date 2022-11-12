@@ -37,6 +37,7 @@ class Client:
 class ClientHandler:
     def __init__(self, config):
         self.clients = {}
+        self.offline_clients = {}
         self.config = config
 
     def add_client(self, name):
@@ -53,6 +54,7 @@ class ClientHandler:
 
         client = self.clients[message_json["client_name"]]
         client.last_update_time = datetime.datetime.now()
+        self.offline_clients.pop(message_json["client_name"], None)
 
         if message_json["message_type"] == "instant_message":
             message_handler.add_message(
@@ -74,4 +76,10 @@ class ClientHandler:
             message_string = "No clients "
         return message_string
 
-    def check_clients
+    def check_clients(self, **kwargs):
+
+        for client_name in self.clients:
+            client = self.clients[client_name]
+            if not client.is_online() and self.offline_clients.get(client_name) is None:
+                self.offline_clients[client_name] = client
+                kwargs["message_handler"].add_message("CRITICAL: Client << " + client_name + " >> is offline")
