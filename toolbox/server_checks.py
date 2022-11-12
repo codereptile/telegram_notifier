@@ -16,3 +16,28 @@ def check_disk_usage(message_handler, config_arguments):
     message_json = {'message_type': 'check_disk_usage', 'value': str(disk_usage_percentage)}
 
     message_handler.add_message(message_json)
+
+
+def check_cpu_usage(message_handler, config_arguments):
+    load_average_string = subprocess.run(["cat", "/proc/loadavg"], capture_output=True).stdout.decode("utf-8")
+    number_of_cores_string = subprocess.run(["grep", "-c", "^processor", "/proc/cpuinfo"],
+                                            capture_output=True).stdout.decode("utf-8")
+    load_average = float(load_average_string.split(" ")[0])
+    number_of_cores = int(number_of_cores_string)
+
+    cpu_usage_percentage = int(load_average / number_of_cores * 100)
+
+    message_json = {'message_type': 'check_cpu_usage', 'value': cpu_usage_percentage}
+
+    message_handler.add_message(message_json)
+
+
+def check_ram_usage(message_handler, config_arguments):
+    output_string = subprocess.run(["cat", "/proc/meminfo"], capture_output=True).stdout.decode("utf-8")
+    total_ram = int(output_string.split("\n")[0].split(" ")[-2])
+    available_ram = int(output_string.split("\n")[2].split(" ")[-2])
+    ram_usage_percentage = int((total_ram - available_ram) / total_ram * 100)
+
+    message_json = {'message_type': 'check_ram_usage', 'value': ram_usage_percentage}
+
+    message_handler.add_message(message_json)

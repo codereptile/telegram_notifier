@@ -4,10 +4,10 @@ import signal
 import socket
 import sys
 import time
-from toolbox import background_task, config_utils, message_handler, server_checks
+from toolbox import background_task, message_handler, server_checks
 
 CONFIG_NAME = "client_config.json"
-config_data = config_utils.load_config(CONFIG_NAME)
+config_data = json.load(open(CONFIG_NAME))
 
 
 def send_data(message: dict):
@@ -34,9 +34,9 @@ if __name__ == '__main__':
     # add mandatory tasks
     task_pool.add_task_simple(message_handler.flush_messages, 0.1)
     # add optional tasks
-    if config_utils.get_instrument_enable(config_data, "check_disk_usage"):
-        task_pool.add_task(server_checks.check_disk_usage,
-                           config_utils.get_instrument(config_data, "check_disk_usage"))
+    for i in config_data["tasks"]:
+        if config_data["tasks"][i]["enable"] == 1:
+            task_pool.add_task(getattr(server_checks, i), config_data["tasks"][i])
     # start tasks
     task_pool.start_tasks()
 

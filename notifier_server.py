@@ -7,7 +7,7 @@ from pathlib import Path
 
 from telegram import Update
 
-from toolbox import config_utils, message_handler, client_handler, background_task
+from toolbox import message_handler, client_handler, background_task
 import time
 from telegram.ext import Updater, CallbackContext, CommandHandler
 
@@ -80,7 +80,7 @@ def bot_command_status(update: Update, context: CallbackContext):
 
 
 if __name__ == "__main__":
-    config_data = config_utils.load_config(CONFIG_NAME)
+    config_data = json.load(open(CONFIG_NAME))
     message_handler = message_handler.MessageHandler(send_messages)
     client_handler = client_handler.ClientHandler(config_data)
 
