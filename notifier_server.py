@@ -1,12 +1,13 @@
 import json
 import signal
+import sys
 import threading
 import socketserver
 from pathlib import Path
 
 from telegram import Update
 
-from toolbox import config_utils, message_handler
+from toolbox import config_utils, message_handler, client_handler, background_task
 import time
 from telegram.ext import Updater, CallbackContext, CommandHandler
 
@@ -15,9 +16,6 @@ messages_mutex = threading.Lock()
 file_mutex = threading.Lock()
 new_messages = []
 stop_all_threads = False
-with open("token.txt") as file:
-    TOKEN = file.read()
-updater = Updater(TOKEN)
 
 
 def print_update(bot, chat_id, message):
@@ -41,20 +39,9 @@ def send_messages(message):
         print(message)
 
 
-message_handler = message_handler.MessageHandler(send_messages)
-
-
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        data = str(self.request.recv(1024), 'ascii')
-
-        data_json = json.loads(data)
-        if data_json["message_type"] == "instant_message":
-            message_handler.add_message(
-                "Got instant message from " + data_json["client_name"] + ": " + data_json["value"])
-        else:
-            print("UNKNOWN MESSAGE TYPE:" + data)
-
+        client_handler.process_message(message_handler, str(self.request.recv(1024), 'ascii'))
         response = bytes("Accepted", 'ascii')
         self.request.sendall(response)
 
@@ -63,11 +50,6 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def __init__(self, server_address, request_handler_class):
         self.allow_reuse_address = True
         super().__init__(server_address, request_handler_class)
-
-
-def graceful_stop(*args):
-    global stop_all_threads
-    stop_all_threads = True
 
 
 def bot_command_start(update: Update, context: CallbackContext):
@@ -92,18 +74,37 @@ def bot_command_start(update: Update, context: CallbackContext):
                                  text="Hi!\nYou're all set to receive notifications!")
 
 
+def bot_command_status(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.message.chat_id,
+                             text=client_handler.status())
+
+
 if __name__ == "__main__":
     config_data = config_utils.load_config(CONFIG_NAME)
+    message_handler = message_handler.MessageHandler(send_messages)
+    client_handler = client_handler.ClientHandler(config_data)
 
-    recipients_filename = Path('recipients.txt')
-    recipients_filename.touch(exist_ok=True)
+    if config_data["message_protocol"] == "telegram":
+        recipients_filename = Path('recipients.txt')
+        recipients_filename.touch(exist_ok=True)
 
-    updater.start_polling()
-    dispatcher = updater.dispatcher
-    dispatcher.add_handler(CommandHandler("start", bot_command_start))
+        with open("token.txt") as file:
+            TOKEN = file.readline().strip()
+        updater = Updater(TOKEN)
+
+        updater.start_polling()
+        dispatcher = updater.dispatcher
+        dispatcher.add_handler(CommandHandler("start", bot_command_start))
+        dispatcher.add_handler(CommandHandler("status", bot_command_status))
 
     # Subnautica cyclops engine start reference
     message_handler.send_immediately("Notifier v3 powering up")
+
+    task_pool = background_task.BackgroundTaskPool(message_handler)
+    # add mandatory tasks
+    task_pool.add_task_simple(message_handler.flush_messages, 0.1)
+    # start tasks
+    task_pool.start_tasks()
 
     server = ThreadedTCPServer((config_data["host"], config_data["port"]), ThreadedTCPRequestHandler)
     with server:
@@ -111,14 +112,15 @@ if __name__ == "__main__":
         server_thread.daemon = True
         server_thread.start()
 
-        signal.signal(signal.SIGINT, graceful_stop)
-        signal.signal(signal.SIGTERM, graceful_stop)
+        signal.signal(signal.SIGINT, task_pool.graceful_stop)
+        signal.signal(signal.SIGTERM, task_pool.graceful_stop)
 
-        while not stop_all_threads:
-            message_handler.flush_messages()
+        while task_pool.is_working:
             time.sleep(0.1)
 
         message_handler.send_immediately("Notifier powering down")
 
-        updater.stop()
+        if config_data["message_protocol"] == "telegram":
+            updater.stop()
+
         server.shutdown()
