@@ -1,6 +1,5 @@
 import re
 import subprocess
-import sys
 
 
 def check_disk_usage(message_handler, config_arguments):

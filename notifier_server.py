@@ -103,7 +103,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler("start", bot_command_start))
 
     # Subnautica cyclops engine start reference
-    message_handler.send_immediately("Notifier (v3.0) powering up")
+    message_handler.send_immediately("Notifier v3 powering up")
 
     server = ThreadedTCPServer((config_data["host"], config_data["port"]), ThreadedTCPRequestHandler)
     with server:
