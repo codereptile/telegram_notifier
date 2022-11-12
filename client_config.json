@@ -1,0 +1,16 @@
+{
+  "client_name": "test_client",
+  "host": "localhost",
+  "port": 1235,
+  "message_protocol": "server",
+  "supervisor_event_listener": 1,
+  "instruments": {
+    "check_disk_usage": {
+      "enable": 1,
+      "period": 5,
+      "arguments": {
+        "filesystem": "/dev/nvme1n1p1.*"
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import re
 import subprocess
+import sys
 
 
 def check_disk_usage(message_handler, config_arguments):
@@ -12,4 +13,7 @@ def check_disk_usage(message_handler, config_arguments):
     if match is None:
         return "SERVER STATUS CHECK FAILED! (df -h)"
     disk_usage_percentage = int(match[0][:-1])
-    message_handler.add_message("Disk usage: " + str(disk_usage_percentage) + "%\n")
+
+    message_json = {'message_type': 'check_disk_usage', 'value': str(disk_usage_percentage)}
+
+    message_handler.add_message(message_json)

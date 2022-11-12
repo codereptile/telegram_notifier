@@ -1,0 +1,5 @@
+{
+  "host": "localhost",
+  "port": 1235,
+  "message_protocol": "console"
+}
