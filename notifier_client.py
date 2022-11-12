@@ -1,87 +1,44 @@
-import re
 import signal
-import threading
-import subprocess
+import socket
 import time
-
-new_messages = []
-stop_all_threads = False
-
-DEFAULT_DISK_USAGE_PERCENT_TRIGGER = 1
-disk_usage_percent_trigger = DEFAULT_DISK_USAGE_PERCENT_TRIGGER
-
-messages_mutex = threading.Lock()
-
-FILE_SYSTEM_NAME = "/dev/nvme0n1p2.*"
+import message_handler
+import server_checks
+import background_task
+import config_utils
 
 
-def check_server_status():
-    global disk_usage_percent_trigger
-    global new_messages
-
-    output_message = ""
-    output_string = subprocess.run(["df", "-h"], capture_output=True).stdout.decode("utf-8")
-    match = re.search(FILE_SYSTEM_NAME, output_string)
-    if match is None:
-        return "SERVER STATUS CHECK FAILED! (df -h)"
-    match = re.search("[0-9]*%", match[0])
-    if match is None:
-        return "SERVER STATUS CHECK FAILED! (df -h)"
-    disk_usage_percentage = int(match[0][:-1])
-    if disk_usage_percentage >= disk_usage_percent_trigger:
-        disk_usage_percent_trigger = disk_usage_percentage + 1
-        output_message += "Warning: disk usage reached " + str(disk_usage_percentage) + "%\n"
-    elif disk_usage_percentage < DEFAULT_DISK_USAGE_PERCENT_TRIGGER:
-        disk_usage_percent_trigger = DEFAULT_DISK_USAGE_PERCENT_TRIGGER
-
-    if output_message:
-        messages_mutex.acquire()
-        new_messages.append(output_message)
-        messages_mutex.release()
+CONFIG_NAME = "config.json"
 
 
-def send_updates():
-    global new_messages
 
-    messages_mutex.acquire()
-    if len(new_messages) != 0:
-        for message in new_messages:
-            print(message)
-
-    new_messages = []
-    messages_mutex.release()
+def send_data(message):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.connect(("localhost", 10002))
+        sock.sendall(bytes(message, 'ascii'))
+        response = str(sock.recv(1024), 'ascii')
+        assert response == "Accepted"
 
 
-class Task(threading.Thread):
-    def __init__(self, target, sleep):
-        def periodic_caller():
-            while not stop_all_threads:
-                target()
-                time.sleep(sleep)
-
-        super().__init__(target=periodic_caller)
-
-
-def graceful_stop(*args):
-    global stop_all_threads
-
-    print("Client stop initialized")
-    stop_all_threads = True
-
+message_handler = message_handler.MessageHandler(send_data)
 
 if __name__ == '__main__':
-    print("Client starts")
+    message_handler.send_immediately("Client 'test' online")
+    config_data = config_utils.get_data_from_config(CONFIG_NAME)
 
-    tasks = [
-        Task(check_server_status, 1),
-        Task(send_updates, 1)
-    ]
-    for task in tasks:
-        task.start()
+    task_pool = background_task.BackgroundTaskPool(message_handler)
+    # add other tasks
+    if config_utils.get_instrument_enable(config_data, "check_disk_usage"):
+        arguments = config_utils.get_instrument(config_data, "check_disk_usage")["arguments"]
+        task_pool.add_task(server_checks.check_disk_usage, arguments)
+    # start tasks
+    task_pool.start_tasks()
 
-    signal.signal(signal.SIGINT, graceful_stop)
-    signal.signal(signal.SIGTERM, graceful_stop)
+    signal.signal(signal.SIGINT, task_pool.graceful_stop)
+    signal.signal(signal.SIGTERM, task_pool.graceful_stop)
 
-    for task in tasks:
-        task.join()
-    print("Client stop finished")
+    while task_pool.is_working:
+        message_handler.flush_messages()
+        time.sleep(0.1)
+
+    task_pool.await_all_tasks()
+    message_handler.send_immediately("Client 'test' offline")
