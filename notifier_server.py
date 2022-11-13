@@ -35,14 +35,16 @@ def send_messages(message):
 
         for chat_id in recipients:
             print_update(updater.bot, chat_id, message)
+        return "Accepted"
     else:
         print(message)
+        return "Accepted"
 
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        client_handler.process_message(message_handler, str(self.request.recv(1024), 'ascii'))
-        response = bytes("Accepted", 'ascii')
+        answer_message = client_handler.process_message(message_handler, str(self.request.recv(1024), 'ascii'))
+        response = bytes(answer_message, 'ascii')
         self.request.sendall(response)
 
 
@@ -83,6 +85,7 @@ if __name__ == "__main__":
     config_data = json.load(open(CONFIG_NAME))
     message_handler = message_handler.MessageHandler(send_messages)
     client_handler = client_handler.ClientHandler(config_data)
+    client_handler.load_clients()
 
     if config_data["message_protocol"] == "telegram":
         recipients_filename = Path('recipients.txt')

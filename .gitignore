@@ -257,3 +257,4 @@ token.txt
 recipients.txt
 client_config.json
 server_config.json
+conf.d

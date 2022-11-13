@@ -15,11 +15,12 @@ class MessageHandler:
     def flush_messages(self):
         self.messages_lock.acquire()
         for message in self.message_pool:
-            self.send_cb(message)
-        self.message_pool = []
+            try:
+                self.send_cb(message)
+                self.message_pool.remove(message)
+            except Exception as e:
+                pass
         self.messages_lock.release()
 
     def send_immediately(self, message):
         self.send_cb(message)
-
-

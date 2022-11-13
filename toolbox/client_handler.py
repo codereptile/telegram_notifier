@@ -4,10 +4,10 @@ import datetime
 
 
 class Client:
-    def __init__(self, name, config):
-        self.name = name
+    def __init__(self, client_config):
+        self.name = client_config["name"]
         self.last_update_time = None
-        self.config = config
+        self.config = client_config
 
         self.last_known_disk_usage = -1
         self.next_disk_usage_trigger = self.config["disk_usage_minimal_trigger"]
@@ -44,6 +44,8 @@ class Client:
             self.next_ram_usage_trigger = self.config["ram_usage_minimal_trigger"]
 
     def is_online(self):
+        if self.last_update_time is None:
+            return False
         time_since_last_update = datetime.datetime.now() - self.last_update_time
         if time_since_last_update.total_seconds() < self.config["client_online_timeout"]:
             return True
@@ -56,7 +58,7 @@ class Client:
                          "Is online: " + str(self.is_online()) + "\n" + \
                          "Last know disk usage: " + str(self.last_known_disk_usage) + "%\n" + \
                          "Last know CPU usage: " + str(self.last_known_cpu_usage) + "%\n" + \
-                         "Last know RAM usage: " + str(self.last_known_ram_usage) + "%"
+                         "Last know RAM usage: " + str(self.last_known_ram_usage) + "%\n"
         return message_string
 
 
@@ -66,23 +68,42 @@ class ClientHandler:
         self.offline_clients = {}
         self.config = config
 
-    def add_client(self, name):
-        if self.clients.get(name) is None:
-            self.clients[name] = Client(name, self.config)
+    def add_client(self, client_config):
+        if self.clients.get(client_config["name"]) is None:
+            self.clients[client_config["name"]] = Client(client_config)
         else:
-            print("DUPLICATE CLIENT:" + name, file=sys.stderr)
+            print("DUPLICATE CLIENT:" + client_config["name"], file=sys.stderr)
+
+    def load_clients(self):
+        from os import walk
+
+        config_files = []
+        for (dirpath, dirnames, filenames) in walk("conf.d"):
+            config_files.extend(filenames)
+
+        for config_file in config_files:
+            try:
+                client_config = json.load(open("conf.d/" + config_file))
+                self.add_client(client_config)
+                self.offline_clients[client_config["name"]] = self.clients[client_config["name"]]
+            except Exception as e:
+                print("COULD NOT LOAD CLIENT CONFIG: " + config_file, file=sys.stderr)
+                print(e, file=sys.stderr)
 
     def process_message(self, message_handler, message):
         message_json = json.loads(message)
 
         if self.clients.get(message_json["client_name"]) is None:
-            self.add_client(message_json["client_name"])
+            print("UNKNOWN CLIENT: " + message_json["client_name"], file=sys.stderr)
+            return
 
         client = self.clients[message_json["client_name"]]
         client.last_update_time = datetime.datetime.now()
         self.offline_clients.pop(message_json["client_name"], None)
 
-        if message_json["message_type"] == "instant_message":
+        if message_json["message_type"] == "get_config":
+            return json.dumps(client.config)
+        elif message_json["message_type"] == "instant_message":
             message_handler.add_message(
                 "Got instant message from << " + message_json["client_name"] + " >>:\n" + message_json["value"])
         elif message_json["message_type"] == "supervisor_event_listener":
@@ -97,6 +118,8 @@ class ClientHandler:
             client.update_ram_usage(message_handler, message_json)
         else:
             print("UNKNOWN MESSAGE TYPE:" + message, file=sys.stderr)
+            return "UNKNOWN MESSAGE TYPE"
+        return "Accepted"
 
     def status(self):
         message_string = ""
