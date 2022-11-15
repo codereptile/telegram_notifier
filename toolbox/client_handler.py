@@ -103,6 +103,8 @@ class ClientHandler:
 
         if message_json["message_type"] == "get_config":
             return json.dumps(client.config)
+        elif message_json["message_type"] == "get_priority":
+            return json.dumps(self.config["notification_priority"])
         elif message_json["message_type"] == "instant_message":
             message_handler.add_message(
                 "Got instant message from << " + message_json["client_name"] + " >>:\n" + message_json["value"])

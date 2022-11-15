@@ -21,6 +21,7 @@ def send_data(message: dict):
 
 if __name__ == '__main__':
     client_config = json.loads(send_data({"message_type": "get_config"}))
+    server_priority = send_data({"message_type": "get_priority"})
 
     message_handler = message_handler.MessageHandler(send_data)
     message_handler.send_immediately({'message_type': 'instant_message', 'value': "Client powering up"})
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     task_pool.add_task_simple(message_handler.flush_messages, 0.1)
     # add optional tasks
     for i in client_config["tasks"]:
-        if client_config["tasks"][i]["enable"] == 1:
+        if client_config["tasks"][i]["enable"] == 1 and client_config["tasks"][i]["priority"] >= int(server_priority):
             task_pool.add_task(getattr(server_checks, i), client_config["tasks"][i])
     # start tasks
     task_pool.start_tasks()
