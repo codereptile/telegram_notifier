@@ -10,38 +10,56 @@ class Client:
         self.config = client_config
 
         self.last_known_disk_usage = -1
-        self.next_disk_usage_trigger = self.config["disk_usage_minimal_trigger"]
+        self.next_disk_usage_trigger = self.config["tasks"]["check_disk_usage"]["handler_type"][
+            "minimal_trigger"]
         self.last_known_cpu_usage = -1
-        self.next_cpu_usage_trigger = self.config["cpu_usage_minimal_trigger"]
+        self.next_cpu_usage_trigger = self.config["tasks"]["check_cpu_usage"]["handler_type"][
+            "minimal_trigger"]
         self.last_known_ram_usage = -1
-        self.next_ram_usage_trigger = self.config["ram_usage_minimal_trigger"]
+        self.next_ram_usage_trigger = self.config["tasks"]["check_ram_usage"]["handler_type"][
+            "minimal_trigger"]
 
-    def update_disk_usage(self, message_handler, message_json):
-        self.last_known_disk_usage = int(message_json["value"])
-        if self.last_known_disk_usage > self.next_disk_usage_trigger:
-            self.next_disk_usage_trigger = self.last_known_disk_usage + self.config["disk_usage_trigger_step"]
-            message_handler.add_message(
-                "WARNING from << " + self.name + " >>:\nDisk usage: " + str(self.last_known_disk_usage) + "%")
-        elif self.last_known_disk_usage < self.config["disk_usage_minimal_trigger"]:
-            self.next_disk_usage_trigger = self.config["disk_usage_minimal_trigger"]
+    def update_parameter(self, message_handler, message_json):
+        def check_trigger(last_task_info, next_task_trigger, task_step, task_name):
+            if last_task_info > next_task_trigger:
+                next_task_trigger = last_task_info + task_step
+                message_handler.add_message("WARNING from << " + self.name + " >>:\n" + task_name + ": " +
+                                            str(last_task_info) + "%")
+                return next_task_trigger
 
-    def update_cpu_usage(self, message_handler, message_json):
-        self.last_known_cpu_usage = int(message_json["value"])
-        if self.last_known_cpu_usage > self.next_cpu_usage_trigger:
-            self.next_cpu_usage_trigger = 1000
-            message_handler.add_message(
-                "WARNING from << " + self.name + " >>:\nCPU usage: " + str(self.last_known_cpu_usage) + "%")
-        elif self.last_known_cpu_usage < self.config["cpu_usage_minimal_trigger"]:
-            self.next_cpu_usage_trigger = self.config["cpu_usage_minimal_trigger"]
+        if message_json["message_type"] == "check_disk_usage":
+            self.last_known_disk_usage = int(message_json["value"])
+            step = self.config["tasks"]["check_disk_usage"]["handler_type"]["trigger_step"]
 
-    def update_ram_usage(self, message_handler, message_json):
-        self.last_known_ram_usage = int(message_json["value"])
-        if self.last_known_ram_usage > self.next_ram_usage_trigger:
-            self.next_ram_usage_trigger = self.last_known_ram_usage + self.config["ram_usage_trigger_step"]
-            message_handler.add_message(
-                "WARNING from << " + self.name + " >>:\nRAM usage: " + str(self.last_known_ram_usage) + "%")
-        elif self.last_known_ram_usage < self.config["ram_usage_minimal_trigger"]:
-            self.next_ram_usage_trigger = self.config["ram_usage_minimal_trigger"]
+            self.next_disk_usage_trigger = check_trigger(self.last_known_disk_usage, self.next_disk_usage_trigger, step,
+                                                         "Disk usage")
+
+            if self.last_known_disk_usage < self.config["tasks"]["check_disk_usage"]["handler_type"]["minimal_trigger"]:
+                self.next_disk_usage_trigger = self.config["tasks"]["check_disk_usage"]["handler_type"][
+                    "minimal_trigger"]
+        elif message_json["message_type"] == "check_cpu_usage":
+            self.last_known_cpu_usage = int(message_json["value"])
+            try:
+                step = self.config["tasks"]["check_cpu_usage"]["handler_type"]["trigger_step"]
+            except:
+                step = 1000
+
+            self.next_cpu_usage_trigger = check_trigger(self.last_known_cpu_usage, self.next_cpu_usage_trigger, step,
+                                                        "CPU usage")
+
+            if self.last_known_disk_usage < self.config["tasks"]["check_cpu_usage"]["handler_type"]["minimal_trigger"]:
+                self.next_disk_usage_trigger = self.config["tasks"]["check_cpu_usage"]["handler_type"][
+                    "minimal_trigger"]
+        elif message_json["message_type"] == "check_ram_usage":
+            self.last_known_ram_usage = int(message_json["value"])
+            step = self.config["tasks"]["check_ram_usage"]["handler_type"]["trigger_step"]
+
+            self.next_ram_usage_trigger = check_trigger(self.last_known_ram_usage, self.next_ram_usage_trigger, step,
+                                                        "RAM usage")
+
+            if self.last_known_disk_usage < self.config["tasks"]["check_ram_usage"]["handler_type"]["minimal_trigger"]:
+                self.next_disk_usage_trigger = self.config["tasks"]["check_ram_usage"]["handler_type"][
+                    "minimal_trigger"]
 
     def is_online(self):
         if self.last_update_time is None:
@@ -103,8 +121,6 @@ class ClientHandler:
 
         if message_json["message_type"] == "get_config":
             return json.dumps(client.config)
-        elif message_json["message_type"] == "get_priority":
-            return json.dumps(self.config["notification_priority"])
         elif message_json["message_type"] == "instant_message":
             message_handler.add_message(
                 "Got instant message from << " + message_json["client_name"] + " >>:\n" + message_json["value"])
@@ -112,12 +128,9 @@ class ClientHandler:
             message_handler.add_message(
                 "Got supervisor update from << " + message_json["client_name"] + " >>:\n" + message_json[
                     "value"])
-        elif message_json["message_type"] == "check_disk_usage":
-            client.update_disk_usage(message_handler, message_json)
-        elif message_json["message_type"] == "check_cpu_usage":
-            client.update_cpu_usage(message_handler, message_json)
-        elif message_json["message_type"] == "check_ram_usage":
-            client.update_ram_usage(message_handler, message_json)
+        elif message_json["message_class"] == "update_parameter_by_trigger" and self.config["notification_priority"]\
+                <= client.config["tasks"][message_json["message_type"]]["handler_type"]["message_priority"]:
+            client.update_parameter(message_handler, message_json)
         else:
             print("UNKNOWN MESSAGE TYPE:" + message, file=sys.stderr)
             return "UNKNOWN MESSAGE TYPE"
