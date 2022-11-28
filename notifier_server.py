@@ -84,7 +84,7 @@ def bot_command_status(update: Update, context: CallbackContext):
 if __name__ == "__main__":
     config_data = json.load(open(CONFIG_NAME))
     message_handler = message_handler.MessageHandler(send_messages)
-    client_handler = client_handler.ClientHandler(config_data)
+    client_handler = client_handler.ClientPool(config_data)
     client_handler.load_clients()
 
     if config_data["message_protocol"] == "telegram":
