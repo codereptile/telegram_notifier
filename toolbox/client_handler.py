@@ -3,7 +3,7 @@ import sys
 import datetime
 
 
-class Client:
+class ClientHandler:
     def __init__(self, client_config):
         self.name = client_config["name"]
         self.last_update_time = None
@@ -18,17 +18,13 @@ class Client:
         self.client_status[message_json["message_type"]]["last_known"] = int(message_json["value"])
         if self.client_status[message_json["message_type"]]["last_known"] > \
                 self.client_status[message_json["message_type"]]["next_trigger"]:
-            try:
-                self.client_status[message_json["message_type"]]["next_trigger"] = \
-                    self.client_status[message_json["message_type"]]["last_known"] + \
-                    self.config["tasks"][message_json["message_type"]]["handler"]["trigger_step"]
-            except:
-                self.client_status[message_json["message_type"]]["next_trigger"] = \
-                    self.client_status[message_json["message_type"]]["last_known"] + 1000
+            self.client_status[message_json["message_type"]]["next_trigger"] = \
+                self.client_status[message_json["message_type"]]["last_known"] + \
+                self.config["tasks"][message_json["message_type"]]["handler"]["trigger_step"]
             if server_priority <= self.config["tasks"][message_json["message_type"]]["handler"]["message_priority"]:
                 message_handler.add_message(
-                    "WARNING from << " + self.name + " >>:\n" + message_json["message_type"] + ": " +
-                    str(self.client_status[message_json["message_type"]]["last_known"]) + "%")
+                    "WARNING from << " + self.name + " >>:\n" + message_json["message_type"] + ": " + str(
+                        self.client_status[message_json["message_type"]]["last_known"]) + "%")
         elif self.client_status[message_json["message_type"]]["last_known"] < \
                 self.config["tasks"][message_json["message_type"]]["handler"]["minimal_trigger"]:
             self.client_status[message_json["message_type"]]["next_trigger"] = \
@@ -61,7 +57,7 @@ class ClientPool:
 
     def add_client(self, client_config):
         if self.clients.get(client_config["name"]) is None:
-            self.clients[client_config["name"]] = Client(client_config)
+            self.clients[client_config["name"]] = ClientHandler(client_config)
         else:
             print("DUPLICATE CLIENT:" + client_config["name"], file=sys.stderr)
 

@@ -43,7 +43,6 @@ if __name__ == '__main__':
             sys.stdout.write(s)
             sys.stdout.flush()
 
-
         write_stdout('READY\n')  # transition from ACKNOWLEDGED to READY
         while task_pool.is_working:
             if select.select([sys.stdin, ], [], [], 0.0)[0]:
