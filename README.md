@@ -10,6 +10,7 @@ Example of client config:
   "client_online_timeout": set timeout for your client (seconds),
   "tasks": {
     "check_disk_usage": {
+      "task_name": name of the task ("Disk usage"),
       "enable": turn on or turn off this task (0 or 1),
       "period": how often do you want to check this task (seconds),
       "arguments": {
@@ -23,6 +24,7 @@ Example of client config:
       }
     },
     "check_cpu_usage": {
+      "task_name": name of the task ("CPU usage"),
       "enable": turn on or turn off this task (0 or 1),
       "period": how often do you want to check this task (seconds),
       "arguments": {
@@ -30,10 +32,12 @@ Example of client config:
       "handler": {
         "handler_type": "update_parameter_by_trigger",
         "minimal_trigger": it's minimal trigger when you receive a warning message (percents),
+        "trigger_step": it's a step to increment minimal trigger when it's reached (percents),
         "message_priority": it's level of message priority (1 - 5)
       }
     },
     "check_ram_usage": {
+      "task_name": name of the task ("RAM usage"),	
       "enable": turn on or turn off this task (0 or 1),
       "period": how often do you want to check this task (seconds),
       "arguments": {

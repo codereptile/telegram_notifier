@@ -23,8 +23,9 @@ class ClientHandler:
                 self.config["tasks"][message_json["message_type"]]["handler"]["trigger_step"]
             if server_priority <= self.config["tasks"][message_json["message_type"]]["handler"]["message_priority"]:
                 message_handler.add_message(
-                    "WARNING from << " + self.name + " >>:\n" + message_json["message_type"] + ": " + str(
-                        self.client_status[message_json["message_type"]]["last_known"]) + "%")
+                    "WARNING from << " + self.name + " >>:\n" + message_json["message_type"] + ": " + \
+                    str(self.client_status[message_json["message_type"]]["last_known"]) + "%" + \
+                    "\n New trigger: " + str(self.client_status[message_json["message_type"]]["next_trigger"]) + "%\n")
         elif self.client_status[message_json["message_type"]]["last_known"] < \
                 self.config["tasks"][message_json["message_type"]]["handler"]["minimal_trigger"]:
             self.client_status[message_json["message_type"]]["next_trigger"] = \
@@ -44,7 +45,10 @@ class ClientHandler:
                          "Last update: " + str(self.last_update_time) + "\n" + \
                          "Is online: " + str(self.is_online()) + "\n"
         for task in self.client_status:
-            message_string += task + ": " + str(self.client_status[task]["last_known"]) + "%\n"
+            message_string += self.config["tasks"][task]["task_name"] + ": " + str(
+                self.client_status[task]["last_known"]) + "%\n"
+            message_string += self.config["tasks"][task]["task_name"] + " trigger: " + str(
+                self.client_status[task]["next_trigger"]) + "%\n"
         return message_string
 
 
