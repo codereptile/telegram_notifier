@@ -49,3 +49,21 @@ Example of client config:
 }
 ```
 
+Example of server config:
+```
+{
+  "host": address of your server ("192.168.1.72"),
+  "port": port of your server (12484),
+  "message_protocol": how do you want to output it ("telegram" - messages sends to telegram, any other argument - console),
+  "notification_priority": priority of your server (1 - 5)
+}
+```
+
+Client want get it's config so... Client's start config examle:
+```
+{
+  "client_name": client's name ("giant"),
+  "host": server's address where client can get it's config ("192.168.1.72"),
+  "port": server's port (12484)
+}
+```

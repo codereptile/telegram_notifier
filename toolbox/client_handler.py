@@ -42,10 +42,9 @@ class ClientHandler:
     def status(self):
         message_string = "Status for << " + self.name + " >>:\n" + \
                          "Last update: " + str(self.last_update_time) + "\n" + \
-                         "Is online: " + str(self.is_online()) + "\n" + \
-                         "Last know Disk usage: " + str(self.client_status["check_disk_usage"]["last_known"]) + "%\n" + \
-                         "Last know CPU usage: " + str(self.client_status["check_cpu_usage"]["last_known"]) + "%\n" + \
-                         "Last know RAM usage: " + str(self.client_status["check_ram_usage"]["last_known"]) + "%\n"
+                         "Is online: " + str(self.is_online()) + "\n"
+        for task in self.client_status:
+            message_string += task + ": " + str(self.client_status[task]["last_known"]) + "%\n"
         return message_string
 
 
