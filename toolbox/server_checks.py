@@ -13,7 +13,8 @@ def check_disk_usage(message_handler, config_arguments):
         return "SERVER STATUS CHECK FAILED! (df -h)"
     disk_usage_percentage = int(match[0][:-1])
 
-    message_json = {'message_type': 'check_disk_usage', 'value': str(disk_usage_percentage)}
+    message_json = {'message_class': 'update_parameter_by_trigger', 'message_type': 'check_disk_usage',
+                    'value': str(disk_usage_percentage)}
 
     message_handler.add_message(message_json)
 
@@ -27,7 +28,8 @@ def check_cpu_usage(message_handler, config_arguments):
 
     cpu_usage_percentage = int(load_average / number_of_cores * 100)
 
-    message_json = {'message_type': 'check_cpu_usage', 'value': cpu_usage_percentage}
+    message_json = {'message_class': 'update_parameter_by_trigger', 'message_type': 'check_cpu_usage',
+                    'value': cpu_usage_percentage}
 
     message_handler.add_message(message_json)
 
@@ -38,6 +40,7 @@ def check_ram_usage(message_handler, config_arguments):
     available_ram = int(output_string.split("\n")[2].split(" ")[-2])
     ram_usage_percentage = int((total_ram - available_ram) / total_ram * 100)
 
-    message_json = {'message_type': 'check_ram_usage', 'value': ram_usage_percentage}
+    message_json = {'message_class': 'update_parameter_by_trigger', 'message_type': 'check_ram_usage',
+                    'value': ram_usage_percentage}
 
     message_handler.add_message(message_json)
