@@ -4,7 +4,7 @@ import signal
 import socket
 import sys
 import time
-from toolbox import background_task, message_handler, server_checks
+from toolbox import background_task, message_handler, server_checks, client_utils
 
 INITIAL_CONFIG_NAME = "client_config.json"
 initial_config = json.load(open(INITIAL_CONFIG_NAME))
@@ -29,16 +29,16 @@ if __name__ == '__main__':
     # add mandatory tasks
     task_pool.add_task_simple(message_handler.flush_messages, 0.1)
     # add optional tasks
-    for i in client_config["tasks"]:
-        if client_config["tasks"][i]["enable"] == 1:
-            task_pool.add_task(getattr(server_checks, i), client_config["tasks"][i])
+    for task in client_utils.get_client_tasks(client_config):
+        if client_utils.get_task_enability(client_config, task) == 1:
+            task_pool.add_task(getattr(server_checks, task), client_config["tasks"][task])
     # start tasks
     task_pool.start_tasks()
 
     signal.signal(signal.SIGINT, task_pool.graceful_stop)
     signal.signal(signal.SIGTERM, task_pool.graceful_stop)
 
-    if client_config["supervisor_event_listener"] == 1:
+    if client_utils.get_supervisor_enability(client_config) == 1:
         def write_stdout(s):
             sys.stdout.write(s)
             sys.stdout.flush()

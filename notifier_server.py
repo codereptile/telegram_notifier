@@ -7,7 +7,7 @@ from pathlib import Path
 
 from telegram import Update
 
-from toolbox import message_handler, client_handler, background_task
+from toolbox import message_handler, client_handler, background_task, server_utils
 import time
 from telegram.ext import Updater, CallbackContext, CommandHandler
 
@@ -23,7 +23,7 @@ def print_update(bot, chat_id, message):
 
 
 def send_messages(message):
-    if config_data["message_protocol"] == "telegram":
+    if server_utils.get_message_protocol(config_data) == "telegram":
         global updater
         recipients = []
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     client_handler = client_handler.ClientPool(config_data)
     client_handler.load_clients()
 
-    if config_data["message_protocol"] == "telegram":
+    if server_utils.get_message_protocol(config_data) == "telegram":
         recipients_filename = Path('recipients.txt')
         recipients_filename.touch(exist_ok=True)
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # start tasks
     task_pool.start_tasks()
 
-    server = ThreadedTCPServer((config_data["host"], config_data["port"]), ThreadedTCPRequestHandler)
+    server = ThreadedTCPServer((server_utils.get_host(config_data), server_utils.get_port(config_data)), ThreadedTCPRequestHandler)
     with server:
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.daemon = True
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
         message_handler.send_immediately("Notifier powering down")
 
-        if config_data["message_protocol"] == "telegram":
+        if server_utils.get_message_protocol(config_data) == "telegram":
             updater.stop()
 
         server.shutdown()
