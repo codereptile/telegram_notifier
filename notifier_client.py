@@ -11,16 +11,19 @@ initial_config = json.load(open(INITIAL_CONFIG_NAME))
 
 
 def send_data(message: dict):
-    message["client_name"] = initial_config["client_name"]
+    message["client_name"] = client_utils.get_client_initial_name(initial_config)
+    host = client_utils.get_client_initial_host(initial_config)
+    port = client_utils.get_client_initial_port(initial_config)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect((initial_config["host"], initial_config["port"]))
+        sock.connect((host, port))
         sock.sendall(bytes(json.dumps(message), 'ascii'))
         return str(sock.recv(1024), 'ascii')  # TODO: solve message size limit problem
 
 
 if __name__ == '__main__':
     client_config = json.loads(send_data({"message_type": "get_config"}))
+    supervisor_status = client_utils.get_supervisor_enability(client_config)
 
     message_handler = message_handler.MessageHandler(send_data)
     message_handler.send_immediately({'message_type': 'instant_message', 'value': "Client powering up"})
@@ -38,7 +41,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, task_pool.graceful_stop)
     signal.signal(signal.SIGTERM, task_pool.graceful_stop)
 
-    if client_utils.get_supervisor_enability(client_config) == 1:
+    if supervisor_status == 1:
         def write_stdout(s):
             sys.stdout.write(s)
             sys.stdout.flush()

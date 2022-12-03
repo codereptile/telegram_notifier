@@ -83,6 +83,10 @@ def bot_command_status(update: Update, context: CallbackContext):
 
 if __name__ == "__main__":
     config_data = json.load(open(CONFIG_NAME))
+
+    server_host = server_utils.get_host(config_data)
+    server_port = server_utils.get_port(config_data)
+
     message_handler = message_handler.MessageHandler(send_messages)
     client_handler = client_handler.ClientPool(config_data)
     client_handler.load_clients()
@@ -110,7 +114,7 @@ if __name__ == "__main__":
     # start tasks
     task_pool.start_tasks()
 
-    server = ThreadedTCPServer((server_utils.get_host(config_data), server_utils.get_port(config_data)), ThreadedTCPRequestHandler)
+    server = ThreadedTCPServer((server_host, server_port), ThreadedTCPRequestHandler)
     with server:
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.daemon = True

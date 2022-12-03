@@ -1,70 +1,88 @@
+import sys
+
+
+# Handle errors of client config from server
 def get_client_name(client_config):
     try:
         return client_config["name"]
     except:
-        print("Client have no name")
-        return ""
+        sys.exit("Client's config haven't client's name")
 
 
 def get_client_tasks(client_config):
     try:
         return client_config["tasks"]
     except:
-        print("Client " + get_client_name(client_config) + " have no tasks")
-        return []
+        sys.exit(get_client_name(client_config) + "'s config haven't tasks field")
 
 
 def get_task_trigger(client_config, task_name):
     try:
         return client_config["tasks"][task_name]["handler"]["minimal_trigger"]
     except:
-        print("Cannot get minimal trigger for client " + get_client_name(client_config))
-        return 1000  # Don't know...
+        sys.exit(get_client_name(client_config) + "'s task " + task_name + " haven't trigger field")
 
 
 def get_task_trigger_step(client_config, task_name):
     try:
         return client_config["tasks"][task_name]["handler"]["trigger_step"]
     except:
-        print("Cannot get trigger step for client " + get_client_name(client_config))
-        return 1000
+        sys.exit(get_client_name(client_config) + "'s task " + task_name + " haven't trigger step field")
 
 
 def get_task_priority(client_config, task_name):
     try:
         return client_config["tasks"][task_name]["handler"]["message_priority"]
     except:
-        print("Cannot get task priority for client " + get_client_name(client_config))
-        return 5
+        sys.exit(get_client_name(client_config) + "'s task " + task_name + " haven't priority field")
 
 
 def get_client_timeout(client_config):
     try:
         return client_config["client_online_timeout"]
     except:
-        print("Client " + get_client_name(client_config) + " haven't timeout")
-        return 1000
+        sys.exit("Client " + get_client_name(client_config) + " haven't timeout")
 
 
 def get_task_name(client_config, task_name):
     try:
         return client_config["tasks"][task_name]["task_name"]
     except:
-        print("Task of client " + get_client_name(client_config) + " haven't task name")
-        return ""
+        sys.exit("Task of client " + get_client_name(client_config) + " haven't task name")
 
 
 def get_task_enability(client_config, task_name):
     try:
         return client_config["tasks"][task_name]["enable"]
     except:
-        print("task of client " + get_client_name(client_config) + " haven't enability")
-        return 0
+        sys.exit("task of client " + get_client_name(client_config) + " haven't enability")
 
 
 def get_supervisor_enability(client_config):
     try:
         return client_config["supervisor_event_listener"]
     except:
-        print("Client " + get_client_name(client_config) + " haven't supervisor status")
-        return 0
+        sys.exit("Client " + get_client_name(client_config) + " haven't supervisor status")
+
+# Handle errors of client's initial config
+
+
+def get_client_initial_name(initial_config):
+    try:
+        return initial_config["client_name"]
+    except:
+        sys.exit("Client's initial config haven't client's name")
+
+
+def get_client_initial_host(initial_config):
+    try:
+        return initial_config["host"]
+    except:
+        sys.exit("Client's initial config haven't client's host")
+
+
+def get_client_initial_port(initial_config):
+    try:
+        return initial_config["port"]
+    except:
+        sys.exit("Client's initial config haven't client's port")

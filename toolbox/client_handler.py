@@ -9,12 +9,16 @@ class ClientHandler:
         self.name = client_utils.get_client_name(client_config)
         self.last_update_time = None
         self.config = client_config
+        self.timeout = client_utils.get_client_timeout(self.config)
 
         self.client_status = {}
         self.client_tasks = client_utils.get_client_tasks(client_config)
         for task in self.client_tasks:
             self.client_status[task] = {"last_known": -1,
-                                        "next_trigger": client_utils.get_task_trigger(self.config, task)}
+                                        "next_trigger": client_utils.get_task_trigger(self.config, task),
+                                        "trigger_step": client_utils.get_task_trigger_step(self.config, task),
+                                        "task_priority": client_utils.get_task_priority(self.config, task),
+                                        "task_name": client_utils.get_task_name(self.config, task)}
 
     def update_parameter(self, message_handler, message_json, server_priority):
         self.client_status[message_json["message_type"]]["last_known"] = int(message_json["value"])
@@ -22,8 +26,8 @@ class ClientHandler:
                 self.client_status[message_json["message_type"]]["next_trigger"]:
             self.client_status[message_json["message_type"]]["next_trigger"] = \
                 self.client_status[message_json["message_type"]]["last_known"] + \
-                client_utils.get_task_trigger_step(self.config, message_json["message_type"])
-            if server_priority <= client_utils.get_task_priority(self.config, message_json["message_type"]):
+                self.client_status[message_json["message_type"]]["trigger_step"]
+            if server_priority <= self.client_status[message_json["message_type"]]["task_priority"]:
                 message_handler.add_message(
                     "WARNING from << " + self.name + " >>:\n" + message_json["message_type"] + ": " + \
                     str(self.client_status[message_json["message_type"]]["last_known"]) + "%" + \
@@ -37,7 +41,7 @@ class ClientHandler:
         if self.last_update_time is None:
             return False
         time_since_last_update = datetime.datetime.now() - self.last_update_time
-        if time_since_last_update.total_seconds() < client_utils.get_client_timeout(self.config):
+        if time_since_last_update.total_seconds() < self.timeout:
             return True
         else:
             return False
@@ -47,9 +51,9 @@ class ClientHandler:
                          "Last update: " + str(self.last_update_time) + "\n" + \
                          "Is online: " + str(self.is_online()) + "\n"
         for task in self.client_status:
-            message_string += client_utils.get_task_name(self.config, task) + ": " + str(
+            message_string += self.client_status[task]["task_name"] + ": " + str(
                 self.client_status[task]["last_known"]) + "%\n"
-            message_string += client_utils.get_task_name(self.config, task) + " trigger: " + str(
+            message_string += self.client_status[task]["task_name"] + " trigger: " + str(
                 self.client_status[task]["next_trigger"]) + "%\n"
         return message_string
 
@@ -59,6 +63,7 @@ class ClientPool:
         self.clients = {}
         self.offline_clients = {}
         self.config = config
+        self.server_priority = server_utils.get_server_priority(self.config)
 
     def add_client(self, client_config):
         if self.clients.get(client_utils.get_client_name(client_config)) is None:
@@ -103,7 +108,7 @@ class ClientPool:
                 "Got supervisor update from << " + message_json["client_name"] + " >>:\n" + message_json[
                     "value"])
         elif message_json["message_class"] == "update_parameter_by_trigger":
-            client.update_parameter(message_handler, message_json, server_utils.get_server_priority(self.config))
+            client.update_parameter(message_handler, message_json, self.server_priority)
         else:
             print("UNKNOWN MESSAGE TYPE:" + message, file=sys.stderr)
             return "UNKNOWN MESSAGE TYPE"
