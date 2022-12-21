@@ -22,6 +22,7 @@ def send_data(message: dict):
 
 
 if __name__ == '__main__':
+    time.sleep(5)
     client_config = json.loads(send_data({"message_type": "get_config"}))
     supervisor_status = client_utils.get_supervisor_enability(client_config)
 

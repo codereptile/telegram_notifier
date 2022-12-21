@@ -122,6 +122,8 @@ if __name__ == "__main__":
 
         signal.signal(signal.SIGINT, task_pool.graceful_stop)
         signal.signal(signal.SIGTERM, task_pool.graceful_stop)
+        signal.signal(signal.SIGINT, client_handler.graceful_stop)
+        signal.signal(signal.SIGTERM, client_handler.graceful_stop)
 
         while task_pool.is_working:
             time.sleep(0.1)

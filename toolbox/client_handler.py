@@ -49,7 +49,8 @@ class ClientHandler:
     def status(self):
         message_string = "Status for << " + self.name + " >>:\n" + \
                          "Last update: " + str(self.last_update_time) + "\n" + \
-                         "Is online: " + str(self.is_online()) + "\n"
+                         "Is online: " + str(self.is_online()) + "\n" + \
+                         "Supervisor status " + str(self.config["supervisor_event_listener"]) + "\n"
         for task in self.client_status:
             message_string += self.client_status[task]["task_name"] + ": " + str(
                 self.client_status[task]["last_known"]) + "%\n"
