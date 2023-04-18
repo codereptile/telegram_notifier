@@ -1,4 +1,7 @@
 # telegram_notifier
+
+`pip install python-telegram-bot --upgrade`
+
 A simple python app for notifying stuff in telegram
 
 Example of client config:
